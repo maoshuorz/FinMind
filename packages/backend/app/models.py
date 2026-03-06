@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
+import hashlib
 from .extensions import db
 
 
@@ -146,3 +147,22 @@ class FinancialAccount(db.Model):
     currency = db.Column(db.String(3), default="INR")
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class TrustedDevice(db.Model):
+    __tablename__ = "trusted_devices"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    device_fingerprint = db.Column(db.String(64), nullable=False)
+    device_name = db.Column(db.String(255), nullable=False)
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.String(500), nullable=True)
+    is_trusted = db.Column(db.Boolean, default=False, nullable=False)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    @staticmethod
+    def generate_fingerprint(user_agent: str, ip_address: str) -> str:
+        """Generate a device fingerprint hash from User-Agent and IP."""
+        raw = f"{user_agent}|{ip_address}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
