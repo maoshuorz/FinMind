@@ -133,3 +133,68 @@ class AuditLog(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     action = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class LoginEvent(db.Model):
+    __tablename__ = "login_events"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(512))
+    login_at = db.Column(db.DateTime, default=datetime.utcnow)
+    success = db.Column(db.Boolean, default=True)
+    anomaly_score = db.Column(db.Float, default=0.0)
+    anomaly_reasons = db.Column(db.Text)
+
+
+class SavingsGoal(db.Model):
+    __tablename__ = "savings_goals"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    target_amount = db.Column(db.Float, nullable=False)
+    current_amount = db.Column(db.Float, default=0.0)
+    deadline = db.Column(db.Date, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+
+class SavingsDeposit(db.Model):
+    __tablename__ = "savings_deposits"
+    id = db.Column(db.Integer, primary_key=True)
+    goal_id = db.Column(db.Integer, db.ForeignKey("savings_goals.id"), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    note = db.Column(db.String(200))
+    deposited_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class SharedBudget(db.Model):
+    __tablename__ = "shared_budgets"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    monthly_limit = db.Column(db.Float, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    members = db.relationship("BudgetMember", backref="budget", lazy="dynamic")
+
+
+class BudgetMember(db.Model):
+    __tablename__ = "budget_members"
+    id = db.Column(db.Integer, primary_key=True)
+    budget_id = db.Column(db.Integer, db.ForeignKey("shared_budgets.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    role = db.Column(db.String(20), default="member")
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class SharedExpense(db.Model):
+    __tablename__ = "shared_expenses"
+    id = db.Column(db.Integer, primary_key=True)
+    budget_id = db.Column(db.Integer, db.ForeignKey("shared_budgets.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    description = db.Column(db.String(500), nullable=False)
+    spent_at = db.Column(db.Date, default=date.today, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
